@@ -34,7 +34,7 @@ def Extracteddata_dict(datas):# in this we are passing the extracted text and co
 
        elif "www" in datas[i] or "Www"  in datas[i]  or "WWW"  in datas[i] or "WwW" in datas[i] or datas[i].endswith(".com"):
            website = datas[i].lower()
-           dict["Website URL"].append(datas[i])
+           dict["Website URL"].append(website)
 
        elif "Tamil Nadu" in  datas[i] or "Tamilnadu" in datas[i] or "TamilNadu" in datas[i] or datas[i].isdigit():
            dict["State and Pincode"].append(datas[i])  
@@ -81,29 +81,38 @@ def saveExtracteddata_database(dataframe1):
     Data_Base.commit()
    
     for index,row in dataframe1.iterrows():
-        insert_Query = '''insert into BussinesCarddetails(Name,
-                                                        Designation,
-                                                        "Contact Number",
-                                                        "Website URL",
-                                                        "Email ID",
-                                                        Address,
-                                                        "Company Name",
-                                                        "State and Pincode",
-                                                        Image)
-                                    
-                                                        values(%s,%s,%s,%s,%s,%s,%s,%s,%s::bytea)'''
-        values = (row['Name'],
-                row['Designation'],
-                row["Contact Number"],
-                row["Website URL"],
-                row["Email id"],
-                row['Address'],
-                row["Company Name"],
-                row["State and Pincode"],
-                row['Image'])
+           # Check if the entry already exists in the database
+        cursor.execute("SELECT * FROM BussinesCarddetails WHERE Name = %s", (row['Name'],))
+        existing_entry = cursor.fetchone()
+        
+        if existing_entry:
+           st.warning(f"Entry with Name '{row['Name']}' already exists in the database. Skipping insertion.")
 
-        cursor.execute(insert_Query,values)
-        Data_Base.commit()
+        else:
+            # Insert the new entry into the database
+            insert_Query = '''insert into BussinesCarddetails(Name,
+                                                            Designation,
+                                                            "Contact Number",
+                                                            "Website URL",
+                                                            "Email ID",
+                                                            Address,
+                                                            "Company Name",
+                                                            "State and Pincode",
+                                                            Image)
+                                        
+                                                            values(%s,%s,%s,%s,%s,%s,%s,%s,%s::bytea)'''
+            values = (row['Name'],
+                    row['Designation'],
+                    row["Contact Number"],
+                    row["Website URL"],
+                    row["Email id"],
+                    row['Address'],
+                    row["Company Name"],
+                    row["State and Pincode"],
+                    row['Image'])
+
+            cursor.execute(insert_Query,values)
+            Data_Base.commit()
 
     # Here we collecting the data we stored in DB and converting them to datafram to view, modify and delete those data
     select_query = "SELECT * FROM BussinesCarddetails" 
@@ -132,6 +141,13 @@ st.set_page_config(
     }
 )
 st.title('BizCardX: Extracting Business Card Data with OCR',)
+
+#[theme]
+primaryColor="#d8ecbb"
+backgroundColor="#e6ffdc"
+secondaryBackgroundColor="#6fa659"
+textColor="#083b10"
+
 
 Menu = option_menu(None,["Home","Upload an Image","Modify Or Delete"],
         icons=['house', 'cloud-upload','pencil-square'], 
@@ -409,11 +425,3 @@ elif Menu == "Modify Or Delete":
                         Data_Base.commit()
 
                         st.success("Data Deleted successfully")          
-
-
-                
-                
-
-
-
-
